@@ -701,9 +701,25 @@ function renderManagerCharts(){
   const amG = groupAvg(r=>r.am);
   if(amChartInstance) amChartInstance.destroy();
   if(amG.labels.length){
+    // Give every bar enough vertical room so no label gets skipped for lack
+    // of space — Chart.js's category-scale autoSkip drops labels that don't
+    // fit, which is what caused missing names when there wasn't enough
+    // height for all Area Managers.
+    const wrap = document.getElementById('amChart').closest('.chartwrap');
+    if(wrap){
+      const neededHeight = Math.max(150, amG.labels.length * 34 + 30);
+      wrap.style.height = neededHeight + 'px';
+    }
     amChartInstance = new Chart(document.getElementById('amChart'), {
       type:'bar', data:{labels:amG.labels, datasets:[{data:amG.data, backgroundColor:'#1baf7a', borderRadius:4, maxBarThickness:26}]},
-      options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,max:110,ticks:{callback:v=>v+'%'}}}},
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{min:0,max:110,ticks:{callback:v=>v+'%'}},
+          y:{ticks:{autoSkip:false, font:{size:11}}}
+        }
+      },
       plugins:[valueLabelPlugin]
     });
   }
