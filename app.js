@@ -322,6 +322,35 @@ function stripExactServingTimes(reports){
   return reports;
 }
 
+/* ---------- Drop serving-time entries whose "product name" is actually a
+   leaked sentence fragment (e.g. "We placed the order for..." or "Biryani
+   was served at") rather than a real dish name. Defensive display-layer
+   cleanup — the backend extractor now filters these going forward, but this
+   retroactively hides any already-synced store's bad entries without
+   needing to re-process the original PDF. Also cleans a trailing "- N"
+   quantity marker some reports leave attached to the item name. ---------- */
+function looksLikeSentenceFragment(name){
+  if(!name) return true;
+  const words = String(name).trim().split(/\s+/);
+  if(words.length > 6) return true;
+  const blocklist = ['we','was','were','placed','namely','both','items','received','ordered','please','kindly','informed','staff','served'];
+  const lower = String(name).toLowerCase();
+  return blocklist.some(w => new RegExp('\\b' + w + '\\b', 'i').test(lower));
+}
+function cleanServingEntries(reports){
+  reports.forEach(r => {
+    if(!Array.isArray(r.serving)) return;
+    r.serving = r.serving
+      .map(entry => {
+        let name = entry[0];
+        if(typeof name === 'string') name = name.replace(/\s*[-–]\s*\d+\s*$/, '').trim();
+        return [name, entry[entry.length - 1]];
+      })
+      .filter(([name]) => !looksLikeSentenceFragment(name));
+  });
+  return reports;
+}
+
 /* ---------- Mask calendar dates / clock times inside comment text.
    Defensive display-layer cleanup — the backend extractor already masks
    these going forward, but this retroactively protects any store whose
@@ -362,7 +391,7 @@ async function loadLocal(){
   if(publicData){
     try{
       const parsed = JSON.parse(publicData);
-      state.reports = maskCommentDateTimes(stripExactServingTimes(parsed.reports || []));
+      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || [])));
       state.thresholds = parsed.thresholds || state.thresholds;
       await saveLocal(false); // cache the CLEANED version locally, and auto-sync it back to Drive if signed in
       return;
@@ -379,13 +408,13 @@ async function loadLocal(){
     }
     if(raw){
       const parsed = JSON.parse(raw);
-      state.reports = maskCommentDateTimes(stripExactServingTimes(parsed.reports || []));
+      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || [])));
       state.thresholds = parsed.thresholds || state.thresholds;
     } else {
-      state.reports = maskCommentDateTimes(stripExactServingTimes(SEED_REPORTS.map(enrich)));
+      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich))));
     }
   }catch(e){
-    state.reports = maskCommentDateTimes(stripExactServingTimes(SEED_REPORTS.map(enrich)));
+    state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich))));
   }
 }
 async function saveLocal(showMsg){
