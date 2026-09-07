@@ -307,7 +307,20 @@ function twoTimesResultsPlausible(twoTimes, items) {
 //      "served at" mentions — each item matched to its best-word-overlap
 //      unclaimed mention, to correctly split dishes that share a word
 //      (e.g. two "Chicken ..." items).
-function parseServing(servingRaw, itemsOrderedRaw) {
+// Rejects a candidate item name that's actually a leaked sentence fragment
+// rather than a real dish name — either implausibly long, or containing a
+// word that only shows up in narrative prose ("was", "served", "namely",
+// "both", etc.), never in an actual dish name in this dataset.
+function looksLikeSentenceFragment(name) {
+  if (!name) return true;
+  const words = name.trim().split(/\s+/);
+  if (words.length > 6) return true;
+  const blocklist = ['we', 'was', 'were', 'placed', 'namely', 'both', 'items', 'received', 'ordered', 'please', 'kindly', 'informed', 'staff', 'served'];
+  const lower = name.toLowerCase();
+  return blocklist.some(w => new RegExp('\\b' + w + '\\b', 'i').test(lower));
+}
+
+function parseServingInner(servingRaw, itemsOrderedRaw) {
   if (!servingRaw) return [];
 
   const items = [];
@@ -315,7 +328,10 @@ function parseServing(servingRaw, itemsOrderedRaw) {
     itemsOrderedRaw.split('\n').forEach(line => {
       const m = line.match(/^\d+\.\s*(.+)$/);
       if (!m) return;
-      const name = m[1].trim().replace(/\s*[–-]\s*\d+\s*qty\s*$/i, '').trim();
+      // Strips a trailing "- Nqty" or bare "- N" quantity marker some
+      // reports leave attached to the item name (e.g. "Kebab - 1qty" or
+      // just "Kebab - 1").
+      const name = m[1].trim().replace(/\s*[–-]\s*\d+\s*(qty)?\s*$/i, '').trim();
       if (name) items.push(name);
     });
   }
@@ -378,6 +394,16 @@ function parseServing(servingRaw, itemsOrderedRaw) {
     }
   });
   return results;
+}
+
+// Public entry point: runs the actual extraction logic above, then filters
+// out any result whose item name looks like a leaked sentence fragment
+// rather than a real dish name — applied once here so every strategy/return
+// path above is covered uniformly, instead of needing to remember to filter
+// at each individual return statement.
+function parseServing(servingRaw, itemsOrderedRaw) {
+  return parseServingInner(servingRaw, itemsOrderedRaw)
+    .filter(([name]) => !looksLikeSentenceFragment(name));
 }
 
 async function extractAudit(pdfBuffer, storeCode, storeMaster) {
