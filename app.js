@@ -749,6 +749,73 @@ function renderTypeChart(){
   });
 }
 
+/* ---------- Score trend — month over month, for whatever View/filter is
+   currently active (Central/City/Quarter/Zonal manager/Area manager/Store
+   type/Store). Shows Overall plus all 5 sections as separate lines, so
+   trends are visible per section, not just the blended overall score. ---------- */
+let trendChartInstance;
+function renderTrendChart(list){
+  const canvas = document.getElementById('trendChart');
+  const emptyNote = document.getElementById('trendEmptyNote');
+  if(trendChartInstance){ trendChartInstance.destroy(); trendChartInstance = null; }
+
+  // Collect distinct months present in this view, sorted chronologically
+  // (not alphabetically) using the same month parser the Quarter view uses.
+  const monthMap = {};
+  list.forEach(r => {
+    if(!r.month) return;
+    const my = parseMonthYear(r.month);
+    if(!my) return;
+    const key = my.year * 100 + my.month;
+    monthMap[key] = r.month;
+  });
+  const monthKeys = Object.keys(monthMap).map(Number).sort((a,b) => a-b);
+
+  if(monthKeys.length < 2){
+    canvas.style.display = 'none';
+    emptyNote.style.display = 'block';
+    emptyNote.textContent = monthKeys.length === 0
+      ? 'No dated reports in this view yet.'
+      : 'Only one month of data so far in this view — trend will appear once a second month is synced.';
+    return;
+  }
+  canvas.style.display = 'block';
+  emptyNote.style.display = 'none';
+
+  const monthLabels = monthKeys.map(k => monthMap[k]);
+  const sectionColors = ['#2a78d6','#eb6834','#1baf7a','#eda100','#4a3aa7'];
+
+  function avgFor(monthStr, valueFn){
+    const vals = list.filter(r => r.month === monthStr).map(valueFn).filter(v => v !== undefined && v !== null);
+    return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0) / vals.length) : null;
+  }
+
+  const overallData = monthLabels.map(m => avgFor(m, r => r.overall));
+  const datasets = [{
+    label: 'Overall', data: overallData, borderColor: '#5c1414',
+    backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.3, pointRadius: 4,
+  }];
+  SECTION_NAMES.forEach((sec, i) => {
+    datasets.push({
+      label: sec,
+      data: monthLabels.map(m => avgFor(m, r => r.sections ? r.sections[sec] : undefined)),
+      borderColor: sectionColors[i % sectionColors.length],
+      backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [4,3], tension: 0.3, pointRadius: 3,
+    });
+  });
+
+  trendChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: { labels: monthLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10.5 } } } },
+      scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+    },
+  });
+}
+
 /* ---------- Marks cut ---------- */
 function buildCutMap(list){
   const cutMap = {};
@@ -1563,6 +1630,7 @@ function renderAll(){
   renderRevenueRisk(list);
   renderQuarterComparison();
   renderSectionChart(list);
+  renderTrendChart(list);
   renderServing(list);
   renderManagerCharts();
   renderTypeChart();
