@@ -225,6 +225,136 @@ const SEED_REPORTS = [
 
 const SECTION_NAMES = ['Ambience','Order Taking','F&B Quality','Billing','Recommendation'];
 
+/* ---------- Historical data (Jan-Jun 2026) — no PDFs exist on Drive for this
+   period (predates the automated pipeline), so it is hardcoded here from a
+   one-time spreadsheet import. Uses a different 6-category vendor template
+   from that period; mapped to the current 5 sections as: Ambience <- Inviting
+   Environment, F&B Quality <- Food Quality, Order Taking <- average of
+   Customer Service + Greeting + Grooming. Billing and Recommendation have no
+   historical equivalent and are intentionally left out of each entry's
+   'sections' object (the trend chart already skips undefined section values
+   gracefully). Overall score is the vendor's own computed Evaluation_Score,
+   used as-is rather than re-derived. Merged additively into state.reports at
+   load time -- never overwrites a real synced report for the same store+month. */
+const HISTORICAL_REPORTS = [
+  {code:'S1110',name:'Kukatpally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Jan 2026',overall:58,sections:{'Ambience':91,'Order Taking':59,'F&B Quality':67}},
+  {code:'S1130',name:'Manikonda',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Jan 2026',overall:54,sections:{'Ambience':82,'Order Taking':47,'F&B Quality':33}},
+  {code:'S1142',name:'Uppal',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Jan 2026',overall:57,sections:{'Ambience':91,'Order Taking':14,'F&B Quality':25}},
+  {code:'S5116',name:'HAL Diamond District',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Jan 2026',overall:83,sections:{'Ambience':91,'Order Taking':93,'F&B Quality':100}},
+  {code:'S5104',name:'Electronic City',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Jan 2026',overall:83,sections:{'Ambience':91,'Order Taking':82,'F&B Quality':33}},
+  {code:'S5117',name:'Whitefield 2',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Jan 2026',overall:64,sections:{'Ambience':100,'Order Taking':72,'F&B Quality':67}},
+  {code:'S5122',name:'Mantri Mall',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Mall',month:'Jan 2026',overall:41,sections:{'Ambience':88,'Order Taking':53,'F&B Quality':0}},
+  {code:'S5118',name:'JP Nagar New',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Jan 2026',overall:69,sections:{'Ambience':73,'Order Taking':78,'F&B Quality':67}},
+  {code:'S1120',name:'BHEL',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Jan 2026',overall:81,sections:{'Ambience':82,'Order Taking':94,'F&B Quality':50}},
+  {code:'S1144',name:'Lingampally',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Jan 2026',overall:35,sections:{'Ambience':45,'Order Taking':44,'F&B Quality':25}},
+  {code:'S5114',name:'Marathahalli',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Feb 2026',overall:71,sections:{'Ambience':91,'Order Taking':88,'F&B Quality':67}},
+  {code:'S1159',name:'Himayat Nagar',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Feb 2026',overall:97,sections:{'Ambience':100,'Order Taking':88,'F&B Quality':100}},
+  {code:'S1131',name:'Sarath City Capital Mall',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'Feb 2026',overall:64,sections:{'Ambience':89,'Order Taking':74,'F&B Quality':67}},
+  {code:'S1123',name:'Kompally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:92,sections:{'Ambience':91,'Order Taking':97,'F&B Quality':75}},
+  {code:'S1138',name:'Warangal',am:'Ramesh',rm:'Rajsekhar',region:'RO TS',type:'Omni',month:'Mar 2026',overall:49,sections:{'Ambience':73,'Order Taking':57,'F&B Quality':25}},
+  {code:'S1128',name:'Vanasthalipuram',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:42,sections:{'Ambience':73,'Order Taking':43,'F&B Quality':33}},
+  {code:'S1126',name:'Charminar',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:81,sections:{'Ambience':100,'Order Taking':80,'F&B Quality':67}},
+  {code:'S1139',name:'Bowenpally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:92,sections:{'Ambience':82,'Order Taking':99,'F&B Quality':75}},
+  {code:'S1157',name:'Pragathi Nagar',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:91,sections:{'Ambience':100,'Order Taking':85,'F&B Quality':100}},
+  {code:'S1107',name:'Imax',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Mar 2026',overall:89,sections:{'Ambience':91,'Order Taking':96,'F&B Quality':75}},
+  {code:'S1113',name:'Gachibowli',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Mar 2026',overall:67,sections:{'Ambience':82,'Order Taking':76,'F&B Quality':67}},
+  {code:'S1136',name:'Sarath City Mall GF',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'Mar 2026',overall:53,sections:{'Ambience':78,'Order Taking':59,'F&B Quality':33}},
+  {code:'S1118',name:'Inorbit',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'Mar 2026',overall:68,sections:{'Ambience':91,'Order Taking':75,'F&B Quality':33}},
+  {code:'S1158',name:'Hitech City',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Mar 2026',overall:86,sections:{'Ambience':82,'Order Taking':96,'F&B Quality':100}},
+  {code:'S1132',name:'Nexus Mall',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'Mall',month:'Mar 2026',overall:92,sections:{'Ambience':91,'Order Taking':97,'F&B Quality':100}},
+  {code:'S3104',name:'Vizag Beach Rd',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:56,sections:{'Ambience':64,'Order Taking':62,'F&B Quality':33}},
+  {code:'S3201',name:'Benz Circle',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:94,sections:{'Ambience':91,'Order Taking':99,'F&B Quality':100}},
+  {code:'S3403',name:'Rajahmundry',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:50,sections:{'Ambience':64,'Order Taking':59,'F&B Quality':25}},
+  {code:'S3202',name:'Tadepalli',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:94,sections:{'Ambience':91,'Order Taking':99,'F&B Quality':100}},
+  {code:'S6104',name:'Kattupakkam',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'Mar 2026',overall:64,sections:{'Ambience':91,'Order Taking':28,'F&B Quality':67}},
+  {code:'S1148',name:'Suncity',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:35,sections:{'Ambience':50,'Order Taking':21,'F&B Quality':67}},
+  {code:'S5113',name:'HSR Layout',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Mar 2026',overall:75,sections:{'Ambience':91,'Order Taking':89,'F&B Quality':67}},
+  {code:'S1145',name:'Padmarao Nagar',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:78,sections:{'Ambience':91,'Order Taking':80,'F&B Quality':50}},
+  {code:'S3101',name:'VIP Road',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:69,sections:{'Ambience':91,'Order Taking':42,'F&B Quality':67}},
+  {code:'S3105',name:'NAD Jn',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:51,sections:{'Ambience':73,'Order Taking':70,'F&B Quality':25}},
+  {code:'S3406',name:'Nellore',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Mar 2026',overall:61,sections:{'Ambience':82,'Order Taking':62,'F&B Quality':33}},
+  {code:'S6102',name:'LB Road',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'Mar 2026',overall:43,sections:{'Ambience':73,'Order Taking':55,'F&B Quality':25}},
+  {code:'S6107',name:'T Nagar',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'Mar 2026',overall:49,sections:{'Ambience':73,'Order Taking':24,'F&B Quality':25}},
+  {code:'S1125',name:'Jubilee Hills',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:47,sections:{'Ambience':55,'Order Taking':15,'F&B Quality':50}},
+  {code:'S1114',name:'Shamshabad',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Mar 2026',overall:39,sections:{'Ambience':30,'Order Taking':58,'F&B Quality':0}},
+  {code:'S1156',name:'Gudimalkapur',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:91,sections:{'Ambience':82,'Order Taking':99,'F&B Quality':100}},
+  {code:'S1101-05',name:'Secunderabad',am:'Maqsood',rm:'Maqsood',region:'Hyderabad',type:'Secunderabad',month:'Mar 2026',overall:97,sections:{'Ambience':91,'Order Taking':100,'F&B Quality':100}},
+  {code:'S1106',name:'Begumpet',am:'Maqsood',rm:'Maqsood',region:'Hyderabad',type:'FSR',month:'Mar 2026',overall:91,sections:{'Ambience':100,'Order Taking':85,'F&B Quality':33}},
+  {code:'S1129',name:'Malkajgiri',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:92,sections:{'Ambience':73,'Order Taking':100,'F&B Quality':100}},
+  {code:'S1153',name:'Rampally',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Mar 2026',overall:65,sections:{'Ambience':64,'Order Taking':66,'F&B Quality':50}},
+  {code:'S5115',name:'Kasavanahalli',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Mar 2026',overall:41,sections:{'Ambience':64,'Order Taking':10,'F&B Quality':0}},
+  {code:'S1127',name:'Hanamkonda',am:'Ramesh',rm:'Rajsekhar',region:'RO TS',type:'Omni',month:'Mar 2026',overall:64,sections:{'Ambience':100,'Order Taking':49,'F&B Quality':67}},
+  {code:'S3401',name:'Kurnool',am:'Nitya',rm:'Nitya',region:'RO AP',type:'Omni',month:'Mar 2026',overall:60,sections:{'Ambience':91,'Order Taking':60,'F&B Quality':67}},
+  {code:'S1147',name:'Muthangi',am:'Brajesh Kumar',rm:'Prashant',region:'RO TS',type:'Omni',month:'Mar 2026',overall:83,sections:{'Ambience':91,'Order Taking':71,'F&B Quality':75}},
+  {code:'S1106',name:'Begumpet',am:'Maqsood',rm:'Maqsood',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:53,sections:{'Ambience':55,'Order Taking':73,'F&B Quality':67}},
+  {code:'S1128',name:'Vanasthalipuram',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:59,sections:{'Ambience':73,'Order Taking':62,'F&B Quality':33}},
+  {code:'S1142',name:'Uppal',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:49,sections:{'Ambience':73,'Order Taking':68,'F&B Quality':33}},
+  {code:'S1120',name:'BHEL',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:24,sections:{'Ambience':10,'Order Taking':10,'F&B Quality':25}},
+  {code:'S1123',name:'Kompally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:92,sections:{'Ambience':82,'Order Taking':99,'F&B Quality':100}},
+  {code:'S5118',name:'JP Nagar New',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Apr 2026',overall:56,sections:{'Ambience':73,'Order Taking':60,'F&B Quality':100}},
+  {code:'S1159',name:'Himayat Nagar',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:54,sections:{'Ambience':64,'Order Taking':72,'F&B Quality':25}},
+  {code:'S1157',name:'Pragathi Nagar',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:44,sections:{'Ambience':60,'Order Taking':13,'F&B Quality':33}},
+  {code:'S1101-05',name:'Secunderabad',am:'Maqsood',rm:'Maqsood',region:'Hyderabad',type:'Secunderabad',month:'Apr 2026',overall:92,sections:{'Ambience':91,'Order Taking':97,'F&B Quality':75}},
+  {code:'S6102',name:'LB Road',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'Apr 2026',overall:29,sections:{'Ambience':36,'Order Taking':20,'F&B Quality':0}},
+  {code:'S5117',name:'Whitefield 2',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Apr 2026',overall:81,sections:{'Ambience':73,'Order Taking':84,'F&B Quality':100}},
+  {code:'S5116',name:'HAL Diamond District',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Apr 2026',overall:78,sections:{'Ambience':82,'Order Taking':81,'F&B Quality':33}},
+  {code:'S1139',name:'Bowenpally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:94,sections:{'Ambience':100,'Order Taking':97,'F&B Quality':67}},
+  {code:'S1107',name:'Imax',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:89,sections:{'Ambience':100,'Order Taking':73,'F&B Quality':75}},
+  {code:'S1145',name:'Padmarao Nagar',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:45,sections:{'Ambience':55,'Order Taking':58,'F&B Quality':50}},
+  {code:'S1113',name:'Gachibowli',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:58,sections:{'Ambience':90,'Order Taking':26,'F&B Quality':67}},
+  {code:'S1129',name:'Malkajgiri',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:55,sections:{'Ambience':73,'Order Taking':27,'F&B Quality':50}},
+  {code:'S1158',name:'Hitech City',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'FSR',month:'Apr 2026',overall:44,sections:{'Ambience':91,'Order Taking':8,'F&B Quality':67}},
+  {code:'S1125',name:'Jubilee Hills',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:63,sections:{'Ambience':64,'Order Taking':77,'F&B Quality':25}},
+  {code:'S1130',name:'Manikonda',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Apr 2026',overall:92,sections:{'Ambience':100,'Order Taking':85,'F&B Quality':100}},
+  {code:'S1136',name:'Sarath City Mall GF',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'Apr 2026',overall:65,sections:{'Ambience':90,'Order Taking':74,'F&B Quality':33}},
+  {code:'S5104',name:'Electronic City',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'May 2026',overall:71,sections:{'Ambience':55,'Order Taking':93,'F&B Quality':50}},
+  {code:'S5113',name:'HSR Layout',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'May 2026',overall:73,sections:{'Ambience':73,'Order Taking':80,'F&B Quality':33}},
+  {code:'S5114',name:'Marathahalli',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'May 2026',overall:70,sections:{'Ambience':91,'Order Taking':76,'F&B Quality':33}},
+  {code:'S6107',name:'T Nagar',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'May 2026',overall:84,sections:{'Ambience':82,'Order Taking':84,'F&B Quality':50}},
+  {code:'S3101',name:'VIP Road',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'May 2026',overall:54,sections:{'Ambience':64,'Order Taking':72,'F&B Quality':33}},
+  {code:'S5122',name:'Mantri Mall',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Mall',month:'May 2026',overall:68,sections:{'Ambience':89,'Order Taking':42,'F&B Quality':100}},
+  {code:'S1110',name:'Kukatpally',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'May 2026',overall:61,sections:{'Ambience':90,'Order Taking':50,'F&B Quality':100}},
+  {code:'S1144',name:'Lingampally',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'May 2026',overall:68,sections:{'Ambience':82,'Order Taking':76,'F&B Quality':25}},
+  {code:'S5123',name:'Mall of Asia',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Mall',month:'May 2026',overall:91,sections:{'Ambience':100,'Order Taking':96,'F&B Quality':33}},
+  {code:'S1132',name:'Nexus Mall',am:'Brajesh Kumar',rm:'Prashant',region:'Hyderabad',type:'Mall',month:'May 2026',overall:55,sections:{'Ambience':89,'Order Taking':14,'F&B Quality':33}},
+  {code:'S3202',name:'Tadepalli',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'May 2026',overall:57,sections:{'Ambience':73,'Order Taking':61,'F&B Quality':33}},
+  {code:'S1114',name:'Shamshabad',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'FSR',month:'May 2026',overall:34,sections:{'Ambience':55,'Order Taking':42,'F&B Quality':0}},
+  {code:'S6104',name:'Kattupakkam',am:'Sunit',rm:'Rajsekhar',region:'Chennai',type:'Omni',month:'May 2026',overall:84,sections:{'Ambience':82,'Order Taking':95,'F&B Quality':50}},
+  {code:'S1108',name:'MasabTank',am:'Bhabani Sankar Nayak',rm:'Prashant',region:'Hyderabad',type:'Omni',month:'May 2026',overall:68,sections:{'Ambience':100,'Order Taking':74,'F&B Quality':25}},
+  {code:'S1156',name:'Gudimalkapur',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'May 2026',overall:32,sections:{'Ambience':36,'Order Taking':10,'F&B Quality':67}},
+  {code:'S3201',name:'Benz Circle',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'May 2026',overall:78,sections:{'Ambience':100,'Order Taking':79,'F&B Quality':67}},
+  {code:'S1126',name:'Charminar',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'May 2026',overall:89,sections:{'Ambience':100,'Order Taking':95,'F&B Quality':67}},
+  {code:'S1131',name:'Sarath City Capital Mall',am:'Chiranjeevi',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'May 2026',overall:42,sections:{'Ambience':88,'Order Taking':54,'F&B Quality':0}},
+  {code:'S1118',name:'Inorbit',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Mall',month:'May 2026',overall:60,sections:{'Ambience':90,'Order Taking':72,'F&B Quality':25}},
+  {code:'S3104',name:'Vizag Beach Rd',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Jun 2026',overall:68,sections:{'Ambience':91,'Order Taking':75,'F&B Quality':25}},
+  {code:'S5115',name:'Kasavanahalli',am:'Shiva',rm:'Rajsekhar',region:'Bangalore',type:'Omni',month:'Jun 2026',overall:78,sections:{'Ambience':64,'Order Taking':84,'F&B Quality':67}},
+  {code:'S1148',name:'Suncity',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Jun 2026',overall:89,sections:{'Ambience':90,'Order Taking':96,'F&B Quality':100}},
+  {code:'S1127',name:'Hanamkonda',am:'Ramesh',rm:'Rajsekhar',region:'RO TS',type:'Omni',month:'Jun 2026',overall:97,sections:{'Ambience':100,'Order Taking':99,'F&B Quality':75}},
+  {code:'S3403',name:'Rajahmundry',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Jun 2026',overall:61,sections:{'Ambience':100,'Order Taking':70,'F&B Quality':0}},
+  {code:'S3105',name:'NAD Jn',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Jun 2026',overall:92,sections:{'Ambience':91,'Order Taking':97,'F&B Quality':67}},
+  {code:'S3401',name:'Kurnool',am:'Nitya',rm:'Nitya',region:'RO AP',type:'Omni',month:'Jun 2026',overall:92,sections:{'Ambience':100,'Order Taking':96,'F&B Quality':67}},
+  {code:'S1153',name:'Rampally',am:'Debmalya',rm:'Nitya',region:'Hyderabad',type:'Omni',month:'Jun 2026',overall:18,sections:{'Ambience':36,'Order Taking':4,'F&B Quality':0}},
+  {code:'S1138',name:'Warangal',am:'Ramesh',rm:'Rajsekhar',region:'RO TS',type:'Omni',month:'Jun 2026',overall:97,sections:{'Ambience':100,'Order Taking':99,'F&B Quality':75}},
+  {code:'S1147',name:'Muthangi',am:'Brajesh Kumar',rm:'Prashant',region:'RO TS',type:'Omni',month:'Jun 2026',overall:97,sections:{'Ambience':100,'Order Taking':99,'F&B Quality':100}},
+  {code:'S3406',name:'Nellore',am:'Ramesh',rm:'Rajsekhar',region:'RO AP',type:'Omni',month:'Jun 2026',overall:72,sections:{'Ambience':80,'Order Taking':67,'F&B Quality':50}}
+];
+
+/* Merges HISTORICAL_REPORTS into the given reports array, skipping any
+   store+month combo that already exists (so it can never clobber a real
+   synced report, e.g. if a store somehow also has Aug 2026 data here). */
+function mergeHistoricalReports(reports){
+  const existingKeys = new Set(reports.map(r => r.code + '|' + r.month));
+  HISTORICAL_REPORTS.forEach(h => {
+    const key = h.code + '|' + h.month;
+    if(!existingKeys.has(key)){
+      reports.push(Object.assign({}, h));
+      existingKeys.add(key);
+    }
+  });
+  return reports;
+}
+
+
 /* ---------- Quarter helpers: Q1 Feb-Apr, Q2 May-Jul, Q3 Aug-Oct, Q4 Nov-Jan ---------- */
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function parseMonthYear(monthStr){
@@ -391,7 +521,7 @@ async function loadLocal(){
   if(publicData){
     try{
       const parsed = JSON.parse(publicData);
-      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || [])));
+      state.reports = mergeHistoricalReports(maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || []))));
       state.thresholds = parsed.thresholds || state.thresholds;
       await saveLocal(false); // cache the CLEANED version locally, and auto-sync it back to Drive if signed in
       return;
@@ -408,13 +538,13 @@ async function loadLocal(){
     }
     if(raw){
       const parsed = JSON.parse(raw);
-      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || [])));
+      state.reports = mergeHistoricalReports(maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(parsed.reports || []))));
       state.thresholds = parsed.thresholds || state.thresholds;
     } else {
-      state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich))));
+      state.reports = mergeHistoricalReports(maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich)))));
     }
   }catch(e){
-    state.reports = maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich))));
+    state.reports = mergeHistoricalReports(maskCommentDateTimes(cleanServingEntries(stripExactServingTimes(SEED_REPORTS.map(enrich)))));
   }
 }
 async function saveLocal(showMsg){
