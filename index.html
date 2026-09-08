@@ -260,9 +260,16 @@ body.email-mode .wrap{padding-top:6px;}
   <div id="passFailBox" class="small-note">Click a bar above to see which stores passed or failed that section.</div>
 </div>
 
+<!-- Score trend (month over month), respects whatever View/filter is active -->
+<div class="panel email-hide">
+  <h2>2. Score trend — month over month (Overall + all sections, respects current view)</h2>
+  <div class="chartwrap"><canvas id="trendChart" role="img" aria-label="Line chart of overall and section scores by month"></canvas></div>
+  <p id="trendEmptyNote" class="small-note" style="display:none;"></p>
+</div>
+
 <!-- Serving time -->
 <div class="panel email-hide">
-  <h2>2. Food serving time by product</h2>
+  <h2>3. Food serving time by product</h2>
   <p class="small-note" style="margin:0 0 8px;">Only time taken to serve is shown — exact clock times are withheld to protect auditor anonymity.</p>
   <table>
     <thead><tr><th>Store</th><th>Product</th><th>Time taken to serve</th></tr></thead>
@@ -272,7 +279,7 @@ body.email-mode .wrap{padding-top:6px;}
 
 <!-- Area manager chart -->
 <div class="panel email-hide">
-  <h2>3. Area manager score</h2>
+  <h2>4. Area manager score</h2>
   <p class="small-note" style="margin:0 0 10px;">Always shown across all uploaded reports. City and Zonal manager scores are covered above.</p>
   <div style="background:#fdf7ef;border:1px solid var(--line);border-radius:10px;padding:14px;">
     <div class="chartwrap" style="height:150px;"><canvas id="amChart" role="img" aria-label="Bar chart of area manager scores"></canvas></div>
@@ -281,25 +288,25 @@ body.email-mode .wrap{padding-top:6px;}
 
 <!-- Store type comparison -->
 <div class="panel email-hide">
-  <h2>4. Store type comparison per section</h2>
+  <h2>5. Store type comparison per section</h2>
   <div class="chartwrap"><canvas id="typeChart" role="img" aria-label="Grouped bar chart comparing store types across sections"></canvas></div>
 </div>
 
 <!-- Marks cut -->
 <div class="panel">
-  <h2>5. Where marks get cut the most</h2>
+  <h2>6. Where marks get cut the most</h2>
   <div id="cutList"></div>
 </div>
 
 <!-- Comments -->
 <div class="panel email-hide">
-  <h2>6. Comments — every section, all stores in view</h2>
+  <h2>7. Comments — every section, all stores in view</h2>
   <div id="commentsAcc"></div>
 </div>
 
 <!-- Download store report: foldable, small footprint -->
 <details class="panel email-hide">
-  <summary style="cursor:pointer;font-size:15px;font-weight:600;color:var(--maroon-dark);">7. Download store report</summary>
+  <summary style="cursor:pointer;font-size:15px;font-weight:600;color:var(--maroon-dark);">8. Download store report</summary>
   <div class="row" style="margin-top:12px;align-items:center;">
     <select id="downloadStorePick" style="min-width:220px;"></select>
     <button class="primary" id="downloadPdfBtn">Download PDF</button>
@@ -310,7 +317,7 @@ body.email-mode .wrap{padding-top:6px;}
 
 <!-- Word cloud -->
 <div class="panel email-hide">
-  <h2>8. Word cloud — positive vs negative feedback themes</h2>
+  <h2>9. Word cloud — positive vs negative feedback themes</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
     <div class="cloud-box pos"><p class="title">Positive</p><div class="cloud-words" id="posCloud"></div></div>
     <div class="cloud-box neg"><p class="title">Negative</p><div class="cloud-words" id="negCloud"></div></div>
@@ -319,13 +326,13 @@ body.email-mode .wrap{padding-top:6px;}
 
 <!-- AI recommendations -->
 <div class="panel">
-  <h2>9. AI recommendations — from lost marks + comment patterns</h2>
+  <h2>10. AI recommendations — from lost marks + comment patterns</h2>
   <div id="recList"></div>
 </div>
 
 <!-- Store detail -->
 <div class="panel email-hide">
-  <h2>10. Store detail — click play to expand full question breakdown</h2>
+  <h2>11. Store detail — click play to expand full question breakdown</h2>
   <div id="storeAccordion"></div>
 </div>
 
