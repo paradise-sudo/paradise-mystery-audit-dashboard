@@ -80,6 +80,45 @@ async function uploadJson(drive, fileId, data) {
   });
 }
 
+// Resolves the actual list of store folders to scan, handling two structures
+// that can coexist side by side under the root folder:
+//   1. Legacy flat: <root>/<Store Folder>/*.pdf
+//   2. Month-nested: <root>/<Month Folder>/<Store Folder>/*.pdf — introduced
+//      starting September 2026, and expected for every month going forward
+//      (October, November, ...), without needing a code change each time.
+// Any top-level folder whose name doesn't look like a store code is treated
+// as a month container and searched one level deeper for store folders.
+async function resolveStoreFolders(drive, rootFolderId, skipped) {
+  const topLevel = await listSubfolders(drive, rootFolderId);
+  const storeFolders = [];
+
+  for (const folder of topLevel) {
+    const directCode = extractStoreCode(folder.name);
+    if (directCode) {
+      storeFolders.push({ id: folder.id, name: folder.name, storeCode: directCode });
+      continue;
+    }
+
+    // Not a store-code-named folder — treat as a month folder and look for
+    // store subfolders inside it.
+    const inner = await listSubfolders(drive, folder.id);
+    if (!inner.length) {
+      skipped.push({ folder: folder.name, reason: 'not a store folder and has no subfolders (not a recognized month folder either)' });
+      continue;
+    }
+    inner.forEach(innerFolder => {
+      const innerCode = extractStoreCode(innerFolder.name);
+      if (innerCode) {
+        storeFolders.push({ id: innerFolder.id, name: folder.name + ' / ' + innerFolder.name, storeCode: innerCode });
+      } else {
+        skipped.push({ folder: folder.name + ' / ' + innerFolder.name, reason: 'could not derive store code from folder name' });
+      }
+    });
+  }
+
+  return storeFolders;
+}
+
 async function run() {
   if (!DRIVE_FOLDER_ID || !DASHBOARD_FILE_ID) {
     console.error('Missing DRIVE_FOLDER_ID or DASHBOARD_FILE_ID env vars.');
@@ -91,20 +130,15 @@ async function run() {
   const processedLog = loadProcessedLog();
 
   console.log('Scanning store folders in Drive...');
-  const subfolders = await listSubfolders(drive, DRIVE_FOLDER_ID);
-  console.log(`Found ${subfolders.length} subfolders.`);
+  const skipped = [];
+  const storeFolders = await resolveStoreFolders(drive, DRIVE_FOLDER_ID, skipped);
+  console.log(`Resolved ${storeFolders.length} store folder(s) to scan (including any nested month folders).`);
 
   let newReportsCount = 0;
-  const skipped = [];
   const extracted = [];
 
-  for (const folder of subfolders) {
-    const storeCode = extractStoreCode(folder.name);
-    if (!storeCode) {
-      skipped.push({ folder: folder.name, reason: 'could not derive store code from folder name' });
-      continue;
-    }
-
+  for (const folder of storeFolders) {
+    const storeCode = folder.storeCode;
     const pdfs = await listPdfsInFolder(drive, folder.id);
     for (const pdf of pdfs) {
       const fileKey = pdf.id;
@@ -116,9 +150,6 @@ async function run() {
         const buf = await downloadFile(drive, pdf.id);
         const report = await extractAudit(buf, storeCode, storeMaster);
 
-        // sanity check: skip (don't merge) if extraction looks incomplete or
-        // produced an impossible score — protects against silently writing
-        // garbage to the live dashboard on a malformed/mismatched-template PDF
         const totalQuestionsFound = Object.values(report.detail).flat().length;
         const scoresInRange = report.overall >= 0 && report.overall <= 100
           && Object.values(report.sections).every(s => s >= 0 && s <= 100);
@@ -152,8 +183,6 @@ async function run() {
     if (skipped.length) {
       console.log(`(${skipped.length} file(s) skipped:`, JSON.stringify(skipped, null, 2), ')');
     }
-    // Clear any stale changes list from a previous run, so daily-check.js
-    // doesn't mistakenly re-screenshot stores that didn't change this time.
     fs.writeFileSync(SYNC_CHANGES_PATH, JSON.stringify([]));
     return;
   }
