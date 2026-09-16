@@ -150,5 +150,29 @@
     "processedAt": "2026-09-04T10:16:20.939Z",
     "storeCode": "S1101-05",
     "month": "Aug 2026"
+  },
+  "1LQD0i2jfg-cT_uppiGQ9ypIKN_pS0OmB": {
+    "md5Checksum": "6a60a99d503358e7f9728cf335253199",
+    "fileName": "S1106 Begumpet.pdf",
+    "folderName": "September'26 Reports / S1106 Begumpet",
+    "processedAt": "2026-09-16T11:30:12.986Z",
+    "storeCode": "S1106",
+    "month": "Sep 2026"
+  },
+  "1_22mMfI8JhNfe4fzSKh3-Zpd5uRSgkkg": {
+    "md5Checksum": "0c825f570d68cb9cdc506406246d5d4c",
+    "fileName": "S1138 Warangal..pdf",
+    "folderName": "September'26 Reports / S1138 Warangal",
+    "processedAt": "2026-09-16T11:30:16.763Z",
+    "storeCode": "S1138",
+    "month": "Sep 2026"
+  },
+  "1_kTR9GFdSj6KfS0feX1Iu852MtyKgaMD": {
+    "md5Checksum": "08f1b0d419dd9e63aa736a1e17f14f51",
+    "fileName": "S1136 Sarath City Mall GF.pdf",
+    "folderName": "September'26 Reports / S1136 Sarath City Mall GF",
+    "processedAt": "2026-09-16T11:30:18.938Z",
+    "storeCode": "S1136",
+    "month": "Sep 2026"
   }
 }
