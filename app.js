@@ -633,7 +633,13 @@ function renderEntityPicker(){
   sel.innerHTML = '';
   opts.forEach(o => {
     const opt = document.createElement('option');
-    opt.value = o; opt.textContent = o;
+    opt.value = o;
+    if(state.view === 'store'){
+      const rec = MASTER_BY_CODE[o];
+      opt.textContent = rec ? (o + ' - ' + rec.name) : o;
+    } else {
+      opt.textContent = o;
+    }
     sel.appendChild(opt);
   });
   if(opts.length){
