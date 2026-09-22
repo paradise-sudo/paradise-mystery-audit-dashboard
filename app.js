@@ -378,6 +378,18 @@ function getQuarterInfo(monthStr){
   const label = 'Q' + q + ' FY' + String(qYear).slice(-2) + ' (' + range + ')';
   return {key, label, q, qYear};
 }
+/* Calendar-quarter version (Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec), used only by
+   the Section heatmap panel — deliberately separate from getQuarterInfo()
+   above, which uses the business's Feb-Apr fiscal quarters everywhere else. */
+function getCalendarQuarterInfo(monthStr){
+  const my = parseMonthYear(monthStr);
+  if(!my) return {key: -1, label: 'Unknown'};
+  const {month, year} = my;
+  const q = Math.floor((month - 1) / 3) + 1;
+  const key = year * 10 + q;
+  const label = 'Q' + q + ' ' + year;
+  return {key, label, q, year};
+}
 function allQuartersSorted(){
   const map = {};
   state.reports.forEach(r => {
@@ -401,7 +413,8 @@ let state = {
   reports: [],
   thresholds: {pass: 79, review: 65},
   view: 'central',
-  entity: null
+  entity: null,
+  heatmapDrillSection: null
 };
 
 /* ---------- Attach master fields to a report by code ---------- */
@@ -769,6 +782,170 @@ const valueLabelPlugin = {
     });
   }
 };
+
+/* ---------- Section heatmap: quarter over quarter (calendar quarters) ---------- */
+function calendarQuartersInList(list){
+  const map = {};
+  list.forEach(r => {
+    const info = getCalendarQuarterInfo(r.month);
+    if(info.key === -1) return;
+    map[info.key] = info.label;
+  });
+  return Object.entries(map).sort((a,b) => a[0]-b[0]).map(([key,label]) => ({key:Number(key), label}));
+}
+function computeSectionHeatmap(list){
+  const quarters = calendarQuartersInList(list);
+  const grid = {}; // section -> quarterLabel -> {sum, count}
+  SECTION_NAMES.forEach(sec => {
+    grid[sec] = {};
+    quarters.forEach(q => { grid[sec][q.label] = {sum:0, count:0}; });
+  });
+  list.forEach(r => {
+    const info = getCalendarQuarterInfo(r.month);
+    if(info.key === -1) return;
+    SECTION_NAMES.forEach(sec => {
+      const val = r.sections ? r.sections[sec] : undefined;
+      if(typeof val === 'number'){
+        grid[sec][info.label].sum += val;
+        grid[sec][info.label].count += 1;
+      }
+    });
+  });
+  return {quarters, grid};
+}
+function heatmapCellStyle(pct){
+  const cls = classify(pct);
+  if(cls === 'pass') return 'background:#e1f5ee;color:var(--pass);';
+  if(cls === 'review') return 'background:#faeeda;color:var(--review);';
+  return 'background:#fcebeb;color:var(--fail);';
+}
+// Aggregates every individual question's earned/possible within one section,
+// split by calendar quarter, across the given (already-filtered) reports —
+// powers the "every question, Q1 vs Q2 vs Q3" drill-down under a heatmap row.
+function computeQuestionQuarterBreakdown(list, sectionKey){
+  const quarters = calendarQuartersInList(list);
+  const byQuestion = {}; // label -> quarterLabel -> {earned, possible}
+  const order = []; // preserve first-seen question order
+  list.forEach(r => {
+    const rows = (r.detail && r.detail[sectionKey]) || [];
+    const info = getCalendarQuarterInfo(r.month);
+    if(info.key === -1) return;
+    rows.forEach(([label, earned, possible]) => {
+      if(!byQuestion[label]){ byQuestion[label] = {}; order.push(label); }
+      if(!byQuestion[label][info.label]) byQuestion[label][info.label] = {earned:0, possible:0};
+      byQuestion[label][info.label].earned += earned;
+      byQuestion[label][info.label].possible += possible;
+    });
+  });
+  return {quarters, order, byQuestion};
+}
+function renderHeatmapDrill(list, sectionKey){
+  const panel = document.getElementById('heatmapDrillPanel');
+  if(!sectionKey){ panel.style.display = 'none'; panel.innerHTML = ''; return; }
+  const {quarters, order, byQuestion} = computeQuestionQuarterBreakdown(list, sectionKey);
+  if(!quarters.length || !order.length){
+    panel.style.display = 'block';
+    panel.innerHTML = '<p class="small-note">No question-level data for ' + sectionKey + ' in the current filter.</p>';
+    return;
+  }
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+    '<p style="font-size:14px;font-weight:600;color:var(--maroon-dark);margin:0;">' + sectionKey + ' — every question, by quarter</p>' +
+    '<button id="heatmapDrillCloseBtn" style="font-size:12px;">Close</button></div>';
+  html += '<div style="overflow-x:auto;"><table><thead><tr><th>Question</th>';
+  quarters.forEach(q => { html += '<th style="text-align:center;">' + q.label + '</th>'; });
+  html += '</tr></thead><tbody>';
+  order.forEach(label => {
+    html += '<tr><td>' + label + '</td>';
+    quarters.forEach(q => {
+      const cell = byQuestion[label][q.label];
+      if(cell && cell.possible > 0){
+        const pct = Math.round((cell.earned / cell.possible) * 100);
+        html += '<td style="text-align:center;' + heatmapCellStyle(pct) + 'border-radius:6px;font-weight:600;">' + pct + '%</td>';
+      } else {
+        html += '<td style="text-align:center;color:var(--ink-soft);">—</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+  document.getElementById('heatmapDrillCloseBtn').onclick = () => { state.heatmapDrillSection = null; renderHeatmapDrill(list, null); };
+}
+let heatmapDrillList = [];
+function renderHeatmap(list){
+  const el = document.getElementById('heatmapGrid');
+  heatmapDrillList = list;
+  const {quarters, grid} = computeSectionHeatmap(list);
+  if(!quarters.length){
+    el.innerHTML = '<p class="small-note">No dated reports in the current filter.</p>';
+    document.getElementById('heatmapDrillPanel').style.display = 'none';
+    return;
+  }
+  const lastTwo = quarters.slice(-2);
+  const cols = 'minmax(140px,168px) repeat(' + quarters.length + ',1fr) 92px 92px';
+  let html = '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;overflow-x:auto;">';
+  html += '<div></div>';
+  quarters.forEach(q => { html += '<div style="font-size:11.5px;font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 0;">' + q.label + '</div>'; });
+  html += '<div style="font-size:11.5px;font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 0;">Avg</div>';
+  html += '<div style="font-size:11.5px;font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 0;">QoQ &Delta;</div>';
+
+  const colSums = quarters.map(() => ({sum:0, count:0}));
+  SECTION_NAMES.forEach(sec => {
+    html += '<div style="font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;">' + sec + '</div>';
+    let rowSum = 0, rowCount = 0;
+    const qVals = [];
+    quarters.forEach((q, i) => {
+      const cell = grid[sec][q.label];
+      if(cell.count > 0){
+        const pct = Math.round(cell.sum / cell.count);
+        qVals.push(pct);
+        rowSum += pct; rowCount++;
+        colSums[i].sum += pct; colSums[i].count++;
+        html += '<button type="button" class="heatmap-cell" data-section="' + sec + '" style="text-align:center;' + heatmapCellStyle(pct) + 'border-radius:8px;font-size:15px;font-weight:700;padding:12px 0;border:none;cursor:pointer;font-family:inherit;">' + pct + '%</button>';
+      } else {
+        qVals.push(null);
+        html += '<div style="text-align:center;color:var(--ink-soft);padding:12px 0;">—</div>';
+      }
+    });
+    html += rowCount ? '<div style="display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--ink);">' + Math.round(rowSum/rowCount) + '%</div>' : '<div></div>';
+    const lastVal = qVals[qVals.length-1], prevVal = qVals.length > 1 ? qVals[qVals.length-2] : null;
+    if(lastVal !== null && prevVal !== null){
+      const delta = lastVal - prevVal;
+      const deltaColor = delta > 0 ? 'var(--pass)' : (delta < 0 ? 'var(--fail)' : 'var(--ink-soft)');
+      html += '<div style="display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:' + deltaColor + ';">' + (delta > 0 ? '+' : '') + delta + '</div>';
+    } else {
+      html += '<div></div>';
+    }
+  });
+
+  html += '<div style="font-size:13px;font-weight:700;color:var(--maroon-dark);display:flex;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:4px;">All sections avg</div>';
+  const colAvgs = colSums.map(c => c.count ? Math.round(c.sum / c.count) : null);
+  colAvgs.forEach(avg => {
+    html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);">' + (avg === null ? '—' : avg + '%') + '</div>';
+  });
+  const lastColAvg = colAvgs[colAvgs.length-1], prevColAvg = colAvgs.length > 1 ? colAvgs[colAvgs.length-2] : null;
+  html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);">' + (lastColAvg === null ? '—' : lastColAvg + '%') + '</div>';
+  if(lastColAvg !== null && prevColAvg !== null){
+    const delta = lastColAvg - prevColAvg;
+    const deltaColor = delta > 0 ? 'var(--pass)' : (delta < 0 ? 'var(--fail)' : 'var(--ink-soft)');
+    html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:' + deltaColor + ';">' + (delta > 0 ? '+' : '') + delta + '</div>';
+  } else {
+    html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;"></div>';
+  }
+  html += '</div>';
+  html += '<p class="small-note" style="padding-top:8px;">Click a cell to see every question in that section, Q1 vs Q2 vs Q3.</p>';
+  el.innerHTML = html;
+
+  el.querySelectorAll('.heatmap-cell').forEach(btn => {
+    btn.onclick = () => {
+      const sec = btn.getAttribute('data-section');
+      state.heatmapDrillSection = (state.heatmapDrillSection === sec) ? null : sec;
+      renderHeatmapDrill(heatmapDrillList, state.heatmapDrillSection);
+    };
+  });
+  renderHeatmapDrill(list, state.heatmapDrillSection || null);
+}
 
 /* ---------- Section chart ---------- */
 let secChartInstance;
@@ -1765,6 +1942,7 @@ function renderAll(){
   renderCityAndZonalScores();
   renderRevenueRisk(list);
   renderQuarterComparison();
+  renderHeatmap(list);
   renderSectionChart(list);
   renderTrendChart(list);
   renderServing(list);
