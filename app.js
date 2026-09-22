@@ -18,7 +18,18 @@ const SIGNUP_ALLOWED_DOMAIN = 'paradisefoodcourt.in';
 firebase.initializeApp(FIREBASE_CONFIG);
 const fbAuth = firebase.auth();
 const fbFunctions = firebase.app().functions(FIREBASE_FUNCTIONS_REGION);
-fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+// LOCAL persistence needs IndexedDB, which Safari Private Browsing (and other
+// browsers' private/incognito modes) restricts or disables. If this call
+// fails silently — as it can there — it can leave the Auth SDK in a broken
+// state for the rest of the tab, causing sign-in and password-reset calls to
+// fail or hang unpredictably. Fall back step by step: LOCAL -> SESSION (still
+// works via sessionStorage) -> NONE (in-memory only, but at least auth calls
+// themselves keep working for that page load).
+fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {
+  return fbAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {
+    return fbAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+  });
+});
 
 let pendingSignupEmail = null;
 
@@ -39,6 +50,18 @@ function friendlyAuthError(e){
 }
 function friendlyFunctionError(e){
   return (e && e.message) || 'Something went wrong. Please try again.';
+}
+
+// Guards against an auth/network call that never resolves or rejects (seen
+// in restrictive private-browsing environments) — without this, the UI can
+// get stuck on "Signing in..." / "Sending reset link..." forever with no
+// way for the person to tell it's actually failed.
+function withTimeout(promise, ms, timeoutMessage){
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(timeoutMessage || 'Timed out. Please try again.')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 function switchAuthTab(tab){
@@ -62,7 +85,7 @@ function initAuthGate(){
     if(!email || !password){ showAuthMsg('loginMsg', 'Enter email and password.', true); return; }
     showAuthMsg('loginMsg', 'Signing in…', false);
     try{
-      await fbAuth.signInWithEmailAndPassword(email, password);
+      await withTimeout(fbAuth.signInWithEmailAndPassword(email, password), 15000, 'Sign-in timed out — check your connection and try again.');
     }catch(e){
       showAuthMsg('loginMsg', friendlyAuthError(e), true);
     }
@@ -141,7 +164,7 @@ function initAuthGate(){
     }
     showAuthMsg('loginMsg', 'Sending reset link…', false);
     try{
-      await fbAuth.sendPasswordResetEmail(email);
+      await withTimeout(fbAuth.sendPasswordResetEmail(email), 15000, 'Timed out sending the reset link — check your connection and try again.');
       showAuthMsg('loginMsg', 'If an account exists for ' + email + ', a reset link has been sent — check your inbox.', false);
     }catch(e){
       showAuthMsg('loginMsg', friendlyAuthError(e), true);
@@ -382,7 +405,9 @@ function mergeHistoricalReports(reports){
 }
 
 
-/* ---------- Quarter helpers: Q1 Feb-Apr, Q2 May-Jul, Q3 Aug-Oct, Q4 Nov-Jan ---------- */
+/* ---------- Quarter helpers: standard Indian fiscal year (Apr-Mar) — Q1 Apr-Jun,
+   Q2 Jul-Sep, Q3 Oct-Dec, Q4 Jan-Mar. FY label uses the ending calendar year
+   (e.g. Apr 2026-Mar 2027 is "FY27"), the common Indian shorthand. ---------- */
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function parseMonthYear(monthStr){
   if(!monthStr) return null;
@@ -396,18 +421,18 @@ function getQuarterInfo(monthStr){
   const my = parseMonthYear(monthStr);
   if(!my) return {key: -1, label: 'Unknown'};
   const {month, year} = my;
-  let q, qYear, range;
-  if(month >= 2 && month <= 4){ q = 1; qYear = year; range = 'Feb–Apr'; }
-  else if(month >= 5 && month <= 7){ q = 2; qYear = year; range = 'May–Jul'; }
-  else if(month >= 8 && month <= 10){ q = 3; qYear = year; range = 'Aug–Oct'; }
-  else { q = 4; range = 'Nov–Jan'; qYear = (month === 1) ? year - 1 : year; }
-  const key = qYear * 10 + q;
-  const label = 'Q' + q + ' FY' + String(qYear).slice(-2) + ' (' + range + ')';
-  return {key, label, q, qYear};
+  let q, fyEndYear, range;
+  if(month >= 4 && month <= 6){ q = 1; range = 'Apr–Jun'; fyEndYear = year + 1; }
+  else if(month >= 7 && month <= 9){ q = 2; range = 'Jul–Sep'; fyEndYear = year + 1; }
+  else if(month >= 10 && month <= 12){ q = 3; range = 'Oct–Dec'; fyEndYear = year + 1; }
+  else { q = 4; range = 'Jan–Mar'; fyEndYear = year; }
+  const key = fyEndYear * 10 + q;
+  const label = 'Q' + q + ' FY' + String(fyEndYear).slice(-2) + ' (' + range + ')';
+  return {key, label, q, qYear: fyEndYear};
 }
 /* Calendar-quarter version (Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec), used only by
    the Section heatmap panel — deliberately separate from getQuarterInfo()
-   above, which uses the business's Feb-Apr fiscal quarters everywhere else. */
+   above, which uses the business's Apr-Mar fiscal year everywhere else. */
 function getCalendarQuarterInfo(monthStr){
   const my = parseMonthYear(monthStr);
   if(!my) return {key: -1, label: 'Unknown'};
