@@ -126,11 +126,14 @@ body.email-mode .wrap{padding-top:6px;}
     <div id="loginForm" class="auth-form">
       <div>
         <label class="small">Email</label>
-        <input type="email" id="loginEmail" placeholder="you@paradisefoodcourt.in">
+        <input type="email" id="loginEmail" placeholder="you@paradisefoodcourt.in" autocomplete="username" autocapitalize="off" spellcheck="false">
       </div>
       <div>
         <label class="small">Password</label>
-        <input type="password" id="loginPassword">
+        <div style="position:relative;">
+          <input type="password" id="loginPassword" autocomplete="current-password" style="padding-right:56px;width:100%;">
+          <button type="button" id="loginPwToggleBtn" aria-label="Show password" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:11px;font-weight:600;color:var(--maroon-dark);padding:4px 6px;cursor:pointer;">Show</button>
+        </div>
       </div>
       <button class="primary" id="loginBtn" type="button">Log in</button>
       <p class="auth-msg" id="loginMsg"></p>
