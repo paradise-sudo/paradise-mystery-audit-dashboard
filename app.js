@@ -132,6 +132,22 @@ function initAuthGate(){
 
   document.getElementById('appSignOutBtn').onclick = () => fbAuth.signOut();
 
+  document.getElementById('forgotPwBtn').onclick = async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    if(!email){ showAuthMsg('loginMsg', 'Enter your email above first, then click "Forgot password?".', true); return; }
+    if(!email.toLowerCase().endsWith('@' + SIGNUP_ALLOWED_DOMAIN)){
+      showAuthMsg('loginMsg', 'Only @' + SIGNUP_ALLOWED_DOMAIN + ' email addresses have accounts here.', true);
+      return;
+    }
+    showAuthMsg('loginMsg', 'Sending reset link…', false);
+    try{
+      await fbAuth.sendPasswordResetEmail(email);
+      showAuthMsg('loginMsg', 'If an account exists for ' + email + ', a reset link has been sent — check your inbox.', false);
+    }catch(e){
+      showAuthMsg('loginMsg', friendlyAuthError(e), true);
+    }
+  };
+
   const pwToggleBtn = document.getElementById('loginPwToggleBtn');
   if(pwToggleBtn){
     pwToggleBtn.onclick = () => {
