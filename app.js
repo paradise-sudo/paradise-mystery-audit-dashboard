@@ -131,6 +131,17 @@ function initAuthGate(){
   };
 
   document.getElementById('appSignOutBtn').onclick = () => fbAuth.signOut();
+
+  const pwToggleBtn = document.getElementById('loginPwToggleBtn');
+  if(pwToggleBtn){
+    pwToggleBtn.onclick = () => {
+      const inp = document.getElementById('loginPassword');
+      const showing = inp.type === 'text';
+      inp.type = showing ? 'password' : 'text';
+      pwToggleBtn.textContent = showing ? 'Show' : 'Hide';
+      pwToggleBtn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    };
+  }
 }
 initAuthGate();
 
