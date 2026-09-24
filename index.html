@@ -245,11 +245,11 @@ body.email-mode .wrap{padding-top:6px;}
 </div>
 
 <!-- Revenue risk alerts -->
-<div class="panel" id="revenueRiskPanel" style="border:2px solid var(--fail);">
-  <h2 style="color:var(--fail);">⚠ Revenue risk alerts</h2>
-  <p class="small-note" style="margin:0 0 10px;">Flags stores where the audit shows contact details were not taken AND no bill/receipt was issued.</p>
+<details class="panel" id="revenueRiskPanel" style="border:2px solid var(--fail);" open>
+  <summary style="cursor:pointer;font-size:15px;font-weight:600;color:var(--fail);">⚠ Revenue risk alerts</summary>
+  <p class="small-note" style="margin:8px 0 10px;">Flags stores where the audit shows contact details were not taken AND no bill/receipt was issued.</p>
   <div id="revenueRiskList"></div>
-</div>
+</details>
 
 <!-- Quarter-over-quarter comparison: only shown when Quarter view + most recent quarter selected -->
 <div class="panel" id="quarterComparePanel" style="display:none;">
@@ -346,16 +346,16 @@ body.email-mode .wrap{padding-top:6px;}
 </div>
 
 <!-- AI recommendations -->
-<div class="panel">
-  <h2>11. AI recommendations — from lost marks + comment patterns</h2>
-  <div id="recList"></div>
-</div>
+<details class="panel">
+  <summary style="cursor:pointer;font-size:15px;font-weight:600;color:var(--maroon-dark);">11. AI recommendations — from lost marks + comment patterns</summary>
+  <div id="recList" style="margin-top:10px;"></div>
+</details>
 
 <!-- Store detail -->
-<div class="panel email-hide">
-  <h2>12. Store detail — click play to expand full question breakdown</h2>
-  <div id="storeAccordion"></div>
-</div>
+<details class="panel email-hide">
+  <summary style="cursor:pointer;font-size:15px;font-weight:600;color:var(--maroon-dark);">12. Store detail — click play to expand full question breakdown</summary>
+  <div id="storeAccordion" style="margin-top:10px;"></div>
+</details>
 
 </div>
 </div>
