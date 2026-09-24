@@ -848,13 +848,23 @@ function calendarQuartersInList(list){
 function computeSectionHeatmap(list){
   const quarters = calendarQuartersInList(list);
   const grid = {}; // section -> quarterLabel -> {sum, count}
+  const overallGrid = {}; // quarterLabel -> {sum, count} — r.overall (already-weighted per-store
+                           // score), the SAME quantity and formula the main "Overall score" card
+                           // uses. Kept separate from an unweighted average of the 5 section
+                           // percentages below, which is a different number and shouldn't be
+                           // presented as "the" overall score for the quarter.
   SECTION_NAMES.forEach(sec => {
     grid[sec] = {};
     quarters.forEach(q => { grid[sec][q.label] = {sum:0, count:0}; });
   });
+  quarters.forEach(q => { overallGrid[q.label] = {sum:0, count:0}; });
   list.forEach(r => {
     const info = getCalendarQuarterInfo(r.month);
     if(info.key === -1) return;
+    if(typeof r.overall === 'number'){
+      overallGrid[info.label].sum += r.overall;
+      overallGrid[info.label].count += 1;
+    }
     SECTION_NAMES.forEach(sec => {
       const val = r.sections ? r.sections[sec] : undefined;
       if(typeof val === 'number'){
@@ -863,7 +873,7 @@ function computeSectionHeatmap(list){
       }
     });
   });
-  return {quarters, grid};
+  return {quarters, grid, overallGrid};
 }
 function heatmapCellStyle(pct){
   const cls = classify(pct);
@@ -928,7 +938,7 @@ let heatmapDrillList = [];
 function renderHeatmap(list){
   const el = document.getElementById('heatmapGrid');
   heatmapDrillList = list;
-  const {quarters, grid} = computeSectionHeatmap(list);
+  const {quarters, grid, overallGrid} = computeSectionHeatmap(list);
   if(!quarters.length){
     el.innerHTML = '<p class="small-note">No dated reports in the current filter.</p>';
     document.getElementById('heatmapDrillPanel').style.display = 'none';
@@ -942,7 +952,6 @@ function renderHeatmap(list){
   html += '<div style="font-size:11.5px;font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 0;">Avg</div>';
   html += '<div style="font-size:11.5px;font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 0;">QoQ &Delta;</div>';
 
-  const colSums = quarters.map(() => ({sum:0, count:0}));
   SECTION_NAMES.forEach(sec => {
     html += '<div style="font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;">' + sec + '</div>';
     let rowSum = 0, rowCount = 0;
@@ -953,7 +962,6 @@ function renderHeatmap(list){
         const pct = Math.round(cell.sum / cell.count);
         qVals.push(pct);
         rowSum += pct; rowCount++;
-        colSums[i].sum += pct; colSums[i].count++;
         html += '<button type="button" class="heatmap-cell" data-section="' + sec + '" style="text-align:center;' + heatmapCellStyle(pct) + 'border-radius:8px;font-size:15px;font-weight:700;padding:12px 0;border:none;cursor:pointer;font-family:inherit;">' + pct + '%</button>';
       } else {
         qVals.push(null);
@@ -971,13 +979,18 @@ function renderHeatmap(list){
     }
   });
 
-  html += '<div style="font-size:13px;font-weight:700;color:var(--maroon-dark);display:flex;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:4px;">All sections avg</div>';
-  const colAvgs = colSums.map(c => c.count ? Math.round(c.sum / c.count) : null);
+  html += '<div style="font-size:13px;font-weight:700;color:var(--maroon-dark);display:flex;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:4px;">Overall score</div>';
+  const colAvgs = quarters.map(q => {
+    const cell = overallGrid[q.label];
+    return cell.count ? Math.round(cell.sum / cell.count) : null;
+  });
   colAvgs.forEach(avg => {
     html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);">' + (avg === null ? '—' : avg + '%') + '</div>';
   });
   const lastColAvg = colAvgs[colAvgs.length-1], prevColAvg = colAvgs.length > 1 ? colAvgs[colAvgs.length-2] : null;
-  html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);">' + (lastColAvg === null ? '—' : lastColAvg + '%') + '</div>';
+  const validColAvgs = colAvgs.filter(v => v !== null);
+  const rowAvgOfAvgs = validColAvgs.length ? Math.round(validColAvgs.reduce((a,b)=>a+b,0) / validColAvgs.length) : null;
+  html += '<div style="border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);">' + (rowAvgOfAvgs === null ? '—' : rowAvgOfAvgs + '%') + '</div>';
   if(lastColAvg !== null && prevColAvg !== null){
     const delta = lastColAvg - prevColAvg;
     const deltaColor = delta > 0 ? 'var(--pass)' : (delta < 0 ? 'var(--fail)' : 'var(--ink-soft)');
