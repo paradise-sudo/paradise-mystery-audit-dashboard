@@ -310,5 +310,37 @@
     "processedAt": "2026-09-30T16:53:43.703Z",
     "storeCode": "S1147",
     "month": "Sep 2026"
+  },
+  "1ubcVmfaLXhcmORxM_lFfcX3Z___GFcvV": {
+    "md5Checksum": "9f6a20a331bbdb1a8ff0db4db65fbd2b",
+    "fileName": "S1144 Lingampally.pdf",
+    "folderName": "September'26 Reports / S1144 Lingampally",
+    "processedAt": "2026-10-06T12:07:48.410Z",
+    "storeCode": "S1144",
+    "month": "Oct 2026"
+  },
+  "1_AGjAYDblS03LIZTJLUvTxjsp4y4Ri5p": {
+    "md5Checksum": "036f43ed4cc74838e5d68cfd50939b57",
+    "fileName": "S5104 Electronic City.pdf",
+    "folderName": "September'26 Reports / S5104 Electronic City",
+    "processedAt": "2026-10-06T12:07:51.159Z",
+    "storeCode": "S5104",
+    "month": "Oct 2026"
+  },
+  "1QHt5TtFc3DEcbW97ZokYkfVnjpYWqN7-": {
+    "md5Checksum": "488819463b5e522b92696607c940d1ab",
+    "fileName": "S5115 Kasavanahalli.pdf",
+    "folderName": "September'26 Reports / S5115 Kasavanahalli",
+    "processedAt": "2026-10-06T12:07:57.541Z",
+    "storeCode": "S5115",
+    "month": "Oct 2026"
+  },
+  "12j1_wRQHPE1fE7dplT03ImSh6ihLWwks": {
+    "md5Checksum": "ee8ec404a21de350aae9f8adaca565e8",
+    "fileName": "S3401 Kurnool.pdf",
+    "folderName": "September'26 Reports / S3401 Kurnool",
+    "processedAt": "2026-10-06T12:08:01.162Z",
+    "storeCode": "S3401",
+    "month": "Oct 2026"
   }
 }
