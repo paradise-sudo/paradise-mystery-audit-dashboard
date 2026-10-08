@@ -350,5 +350,21 @@
     "processedAt": "2026-10-07T11:53:23.780Z",
     "storeCode": "S3406",
     "month": "Oct 2026"
+  },
+  "1GDWqeX8BpB8potqkUCVkhUX0t8O3RWN8": {
+    "md5Checksum": "57f3db1eafd51ecc7e7af7511091d63a",
+    "fileName": "S1148 Suncity.pdf",
+    "folderName": "September'26 Reports / S1148 Suncity",
+    "processedAt": "2026-10-08T12:08:56.580Z",
+    "storeCode": "S1148",
+    "month": "Oct 2026"
+  },
+  "1Nj6aTknlB5ZfwQCfQp-Sc1LsBIYIZOmW": {
+    "md5Checksum": "47c177a8bddaebfc654fed33620ddb6b",
+    "fileName": "S1123 Kompally.pdf",
+    "folderName": "September'26 Reports / S1123 Kompally",
+    "processedAt": "2026-10-08T12:08:58.991Z",
+    "storeCode": "S1123",
+    "month": "Oct 2026"
   }
 }
