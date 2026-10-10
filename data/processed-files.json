@@ -366,5 +366,21 @@
     "processedAt": "2026-10-08T12:08:58.991Z",
     "storeCode": "S1123",
     "month": "Oct 2026"
+  },
+  "1idRIUipRsuQ52hzO3nr1EmUncRAZYQWN": {
+    "md5Checksum": "dc6b81fc620727fecc90ccd83614aa9d",
+    "fileName": "S5123 Mall of Asia.pdf",
+    "folderName": "September'26 Reports / S5123 Mall of Asia",
+    "processedAt": "2026-10-10T16:18:10.374Z",
+    "storeCode": "S5123",
+    "month": "Oct 2026"
+  },
+  "1gZvjSE9YNZ6es0H2vjdWUcaX0q6Jo4fZ": {
+    "md5Checksum": "807522425007156146aee57a97144c78",
+    "fileName": "S3201 Benz Circle.pdf",
+    "folderName": "September'26 Reports / S3201 Benz Circle",
+    "processedAt": "2026-10-10T16:18:13.154Z",
+    "storeCode": "S3201",
+    "month": "Oct 2026"
   }
 }
