@@ -382,5 +382,13 @@
     "processedAt": "2026-10-10T16:18:13.154Z",
     "storeCode": "S3201",
     "month": "Oct 2026"
+  },
+  "1daHMkknIdA72JEiW3qLqgfkW7jrC8l8O": {
+    "md5Checksum": "8a661671f0488b1c020ae91b577c5048",
+    "fileName": "S1130 Manikonda.pdf",
+    "folderName": "September'26 Reports / S1130 Manikonda",
+    "processedAt": "2026-10-12T13:21:33.534Z",
+    "storeCode": "S1130",
+    "month": "Sep 2026"
   }
 }
