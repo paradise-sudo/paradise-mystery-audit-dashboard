@@ -491,7 +491,9 @@ let state = {
   thresholds: {pass: 79, review: 65},
   view: 'central',
   entity: null,
-  heatmapDrillSection: null
+  heatmapDrillSection: null,
+  periodFrom: null, // month key (year*100+month) or null = no lower bound
+  periodTo: null    // month key or null = no upper bound
 };
 
 /* ---------- Attach master fields to a report by code ---------- */
@@ -655,8 +657,75 @@ function flashStatus(text, isErr){
 }
 
 /* ---------- Filtering by view ---------- */
+/* ---------- Date (month) range filter. Reports only carry a month label
+   (e.g. "Aug 2026"), not an exact day, so the range works at month level.
+   periodReports() is the date-filtered base used by every panel. ---------- */
+function monthKeyOf(r){
+  const my = parseMonthYear(r.month);
+  return my ? my.year * 100 + my.month : null;
+}
+function periodReports(){
+  if(!state.periodFrom && !state.periodTo) return state.reports;
+  return state.reports.filter(r => {
+    const k = monthKeyOf(r);
+    if(k === null) return false;
+    if(state.periodFrom && k < state.periodFrom) return false;
+    if(state.periodTo && k > state.periodTo) return false;
+    return true;
+  });
+}
+function renderPeriodPicker(){
+  const fromSel = document.getElementById('periodFrom');
+  const toSel = document.getElementById('periodTo');
+  const clearBtn = document.getElementById('periodClearBtn');
+  const note = document.getElementById('periodNote');
+  if(!fromSel || !toSel) return;
+  const map = {};
+  state.reports.forEach(r => { const k = monthKeyOf(r); if(k !== null) map[k] = r.month; });
+  const keys = Object.keys(map).map(Number).sort((a,b) => a-b);
+  function fill(sel, blankLabel, current){
+    sel.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = ''; blank.textContent = blankLabel;
+    sel.appendChild(blank);
+    keys.forEach(k => {
+      const o = document.createElement('option');
+      o.value = String(k); o.textContent = map[k];
+      sel.appendChild(o);
+    });
+    sel.value = current ? String(current) : '';
+  }
+  fill(fromSel, 'Earliest', state.periodFrom);
+  fill(toSel, 'Latest', state.periodTo);
+  function onChange(changed){
+    state.periodFrom = fromSel.value ? Number(fromSel.value) : null;
+    state.periodTo = toSel.value ? Number(toSel.value) : null;
+    if(state.periodFrom && state.periodTo && state.periodFrom > state.periodTo){
+      // keep the range valid: the control just changed wins, the other follows it
+      if(changed === 'from') state.periodTo = state.periodFrom; else state.periodFrom = state.periodTo;
+      fromSel.value = state.periodFrom ? String(state.periodFrom) : '';
+      toSel.value = state.periodTo ? String(state.periodTo) : '';
+    }
+    updateNote();
+    renderAll();
+  }
+  function updateNote(){
+    if(!note) return;
+    if(!state.periodFrom && !state.periodTo){ note.textContent = 'Showing all months.'; return; }
+    note.textContent = 'Showing ' + (state.periodFrom ? map[state.periodFrom] : 'earliest') + ' to ' + (state.periodTo ? map[state.periodTo] : 'latest') + ' \u00b7 ' + periodReports().length + ' reports';
+  }
+  fromSel.onchange = () => onChange('from');
+  toSel.onchange = () => onChange('to');
+  if(clearBtn) clearBtn.onclick = () => {
+    state.periodFrom = null; state.periodTo = null;
+    fromSel.value = ''; toSel.value = '';
+    updateNote(); renderAll();
+  };
+  updateNote();
+}
+
 function filteredReports(){
-  const list = state.reports;
+  const list = periodReports();
   if(state.view === 'central' || !state.entity) return list;
   if(state.view === 'store') return list.filter(r => r.code === state.entity);
   if(state.view === 'am') return list.filter(r => r.am === state.entity);
@@ -1095,7 +1164,7 @@ function renderServing(list){
 let amChartInstance;
 function groupAvg(groupFn){
   const g = {};
-  state.reports.forEach(r => { const k = groupFn(r); (g[k]=g[k]||[]).push(r.overall); });
+  periodReports().forEach(r => { const k = groupFn(r); (g[k]=g[k]||[]).push(r.overall); });
   const labels = Object.keys(g);
   const data = labels.map(k => Math.round(g[k].reduce((a,b)=>a+b,0)/g[k].length));
   return {labels, data};
@@ -1131,10 +1200,10 @@ function renderManagerCharts(){
 /* ---------- Store type chart — always from full dataset ---------- */
 let typeChartInstance;
 function renderTypeChart(){
-  const types = [...new Set(state.reports.map(r=>r.type))];
+  const types = [...new Set(periodReports().map(r=>r.type))];
   const colors = ['#2a78d6','#eb6834','#1baf7a','#eda100','#4a3aa7'];
   const datasets = types.map((t,i) => {
-    const list = state.reports.filter(r=>r.type===t);
+    const list = periodReports().filter(r=>r.type===t);
     const data = SECTION_NAMES.map(sec => {
       const vals = list.map(r=>r.sections[sec]).filter(v=>v!==undefined);
       return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
@@ -1820,7 +1889,7 @@ function renderStoreAccordion(list){
 function renderCityAndZonalScores(){
   function avgByKey(keyFn){
     const g = {};
-    state.reports.forEach(r => { const k = keyFn(r); (g[k]=g[k]||[]).push(r.overall); });
+    periodReports().forEach(r => { const k = keyFn(r); (g[k]=g[k]||[]).push(r.overall); });
     return Object.entries(g).map(([k,vals]) => [k, Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)])
       .sort((a,b) => b[1]-a[1]);
   }
@@ -2077,6 +2146,7 @@ async function initDashboard(){
   await loadLocal();
   document.getElementById('thPass').value = state.thresholds.pass;
   document.getElementById('thReview').value = state.thresholds.review;
+  renderPeriodPicker();
   renderTabs();
   renderEntityPicker();
   applyViewFromUrlIfRequested();
