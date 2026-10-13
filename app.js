@@ -1768,7 +1768,7 @@ function generateStorePdf(r){
   doc.setTextColor(140);
   doc.text('Generated from Paradise Mystery Audit Dashboard on ' + new Date().toLocaleDateString('en-IN'), marginX, 290);
 
-  doc.save(r.code + '_' + r.name.replace(/\s+/g, '_') + '_audit_report.pdf');
+  doc.save(r.code + '_' + r.name.replace(/\s+/g, '_') + '_' + (r.month || '').replace(/\s+/g, '') + '_audit_report.pdf');
 }
 
 function generateStoreExcel(r){
@@ -1813,7 +1813,7 @@ function generateStoreExcel(r){
     XLSX.utils.book_append_sheet(wb, servingSheet, 'Serving Time');
   }
 
-  XLSX.writeFile(wb, r.code + '_' + r.name.replace(/\s+/g, '_') + '_audit_report.xlsx');
+  XLSX.writeFile(wb, r.code + '_' + r.name.replace(/\s+/g, '_') + '_' + (r.month || '').replace(/\s+/g, '') + '_audit_report.xlsx');
 }
 
 function renderStoreAccordion(list){
@@ -2067,6 +2067,8 @@ function renderDownloadPanel(list){
   if(!sel) return;
   const prevValue = sel.value;
   sel.innerHTML = '';
+  // Newest month first, so the default pick is each store's latest report.
+  list = [...list].sort((a,b) => (monthKeyOf(b) || 0) - (monthKeyOf(a) || 0));
   if(!list.length){
     const opt = document.createElement('option');
     opt.textContent = 'No stores in this view';
@@ -2074,22 +2076,22 @@ function renderDownloadPanel(list){
     sel.appendChild(opt);
     return;
   }
-  list.forEach(r => {
+  list.forEach((r, i) => {
     const opt = document.createElement('option');
-    opt.value = r.code;
-    opt.textContent = r.code + ' \u00b7 ' + r.name;
+    opt.value = r.code + '|' + r.month;
+    opt.textContent = r.code + ' \u00b7 ' + r.name + ' \u00b7 ' + (r.month || '-');
     sel.appendChild(opt);
   });
-  if(list.some(r => r.code === prevValue)) sel.value = prevValue;
+  if(list.some(r => r.code + '|' + r.month === prevValue)) sel.value = prevValue;
 
   const pdfBtn = document.getElementById('downloadPdfBtn');
   const xlsBtn = document.getElementById('downloadXlsBtn');
   pdfBtn.onclick = () => {
-    const r = list.find(x => x.code === sel.value);
+    const r = list.find(x => x.code + '|' + x.month === sel.value);
     if(r) generateStorePdf(r);
   };
   xlsBtn.onclick = () => {
-    const r = list.find(x => x.code === sel.value);
+    const r = list.find(x => x.code + '|' + x.month === sel.value);
     if(r) generateStoreExcel(r);
   };
 }
