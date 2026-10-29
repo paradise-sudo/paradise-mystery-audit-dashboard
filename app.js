@@ -1816,6 +1816,76 @@ function generateStoreExcel(r){
   XLSX.writeFile(wb, r.code + '_' + r.name.replace(/\s+/g, '_') + '_' + (r.month || '').replace(/\s+/g, '') + '_audit_report.xlsx');
 }
 
+/* ---------- Store-wise dump (Excel): one row per store visit in the current
+   selection (View filter + From/To month range), with every question score
+   grouped section by section, and each section's remarks right after its
+   questions. Remarks are already date/time-masked at load time. ---------- */
+function generateStoreDump(list){
+  const note = document.getElementById('periodNote');
+  if(!list.length){
+    if(note) note.textContent = 'No reports in this selection to download.';
+    return;
+  }
+  const rows = [...list].sort((a,b) => String(a.code).localeCompare(String(b.code)) || ((monthKeyOf(a)||0) - (monthKeyOf(b)||0)));
+
+  // Question columns per section, in first-seen order across the selection
+  const secQs = {};
+  SECTION_NAMES.forEach(sec => { secQs[sec] = []; });
+  rows.forEach(r => SECTION_NAMES.forEach(sec => {
+    ((r.detail && r.detail[sec]) || []).forEach(([label, , possible]) => {
+      const found = secQs[sec].find(q => q.label === label);
+      if(!found) secQs[sec].push({label, max: possible});
+      else if(possible > found.max) found.max = possible;
+    });
+  }));
+
+  const fixed = ['Store code','Store name','Month','Region','Zonal manager','Area manager','Store type','Overall %'];
+  const band = fixed.map(() => '');
+  const head = [...fixed];
+  const merges = [];
+  SECTION_NAMES.forEach(sec => {
+    const start = head.length;
+    band.push(sec);
+    head.push(sec + ' %');
+    secQs[sec].forEach(q => { band.push(''); head.push(q.label + ' (/' + q.max + ')'); });
+    band.push(''); head.push(sec + ' remarks');
+    merges.push({s:{r:0,c:start}, e:{r:0,c:head.length-1}});
+  });
+
+  const data = [band, head];
+  rows.forEach(r => {
+    const line = [r.code, r.name, r.month || '', r.region || '', r.rm || '', r.am || '', r.type || '', r.overall];
+    SECTION_NAMES.forEach(sec => {
+      line.push(r.sections && r.sections[sec] !== undefined ? r.sections[sec] : '');
+      const byLabel = {};
+      ((r.detail && r.detail[sec]) || []).forEach(([label, earned]) => { byLabel[label] = earned; });
+      secQs[sec].forEach(q => { line.push(byLabel[q.label] !== undefined ? byLabel[q.label] : ''); });
+      line.push((r.comments && r.comments[sec]) || '');
+    });
+    data.push(line);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!merges'] = merges;
+  ws['!cols'] = head.map((h, i) => ({wch: i < 2 ? 22 : (/remarks$/.test(h) ? 70 : 14)}));
+  ws['!freeze'] = {xSplit: 3, ySplit: 2};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Store-wise dump');
+
+  const longRows = [['Store code','Store name','Month','Section','Question','Earned','Possible']];
+  rows.forEach(r => SECTION_NAMES.forEach(sec => {
+    ((r.detail && r.detail[sec]) || []).forEach(([label, earned, possible]) => {
+      longRows.push([r.code, r.name, r.month || '', sec, label, earned, possible]);
+    });
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(longRows), 'Question detail (long)');
+
+  const keys = rows.map(monthKeyOf).filter(k => k !== null).sort((a,b) => a-b);
+  const labelOf = k => MONTH_NAMES[(k % 100) - 1] + Math.floor(k / 100);
+  const range = keys.length ? (labelOf(keys[0]) + (keys[0] === keys[keys.length-1] ? '' : '_to_' + labelOf(keys[keys.length-1]))) : 'all';
+  XLSX.writeFile(wb, 'Mystery_Audit_Store_Dump_' + range + '.xlsx');
+}
+
 function renderStoreAccordion(list){
   const el = document.getElementById('storeAccordion');
   el.innerHTML = '';
@@ -2149,6 +2219,8 @@ async function initDashboard(){
   document.getElementById('thPass').value = state.thresholds.pass;
   document.getElementById('thReview').value = state.thresholds.review;
   renderPeriodPicker();
+  const dumpBtn = document.getElementById('dumpBtn');
+  if(dumpBtn) dumpBtn.onclick = () => generateStoreDump(filteredReports());
   renderTabs();
   renderEntityPicker();
   applyViewFromUrlIfRequested();
