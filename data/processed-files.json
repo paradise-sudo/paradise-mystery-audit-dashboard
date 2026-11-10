@@ -390,5 +390,29 @@
     "processedAt": "2026-10-12T13:21:33.534Z",
     "storeCode": "S1130",
     "month": "Sep 2026"
+  },
+  "1dZTJpq_pF1Rkg0CZP0L7nP4auh4bw3nN": {
+    "md5Checksum": "f996de032322be17e3557680ed3c9b70",
+    "fileName": "S1125 Jubilee Hills.pdf",
+    "folderName": "November'26 Reports / S1125 Jubilee Hills",
+    "processedAt": "2026-11-10T13:39:07.283Z",
+    "storeCode": "S1125",
+    "month": "Nov 2026"
+  },
+  "15CsAiKpZEy10F0N57wtD9tQmzsuXUSj2": {
+    "md5Checksum": "03e219ea53ef7b17738c01a134e49263",
+    "fileName": "S1106 Begumpet.pdf",
+    "folderName": "November'26 Reports / S1106 Begumpet",
+    "processedAt": "2026-11-10T13:39:10.231Z",
+    "storeCode": "S1106",
+    "month": "Nov 2026"
+  },
+  "1jlDmbKZvSpPD_d78ub9lS20YEOr_8CXW": {
+    "md5Checksum": "28fdc560bee2467706df13f55f6dd3bd",
+    "fileName": "S1142 Uppal.pdf",
+    "folderName": "November'26 Reports / S1142 Uppal",
+    "processedAt": "2026-11-10T13:39:16.824Z",
+    "storeCode": "S1142",
+    "month": "Nov 2026"
   }
 }
