@@ -422,5 +422,29 @@
     "processedAt": "2026-11-11T12:51:16.897Z",
     "storeCode": "S1138",
     "month": "Nov 2026"
+  },
+  "1ykJ8yw0r1XBfKAyhLIzb1KLKa4pYQ6Q9": {
+    "md5Checksum": "5b5f61bbfbc32905d76cb9c158bd53cc",
+    "fileName": "S3201 Benz Circle.pdf",
+    "folderName": "November'26 Reports / S3201 Benz Circle",
+    "processedAt": "2026-11-17T14:44:15.498Z",
+    "storeCode": "S3201",
+    "month": "Nov 2026"
+  },
+  "1B97YfriwvfILFkrsKvrrXV4xUo4AG2Ip": {
+    "md5Checksum": "a859bf2f68d44046b68d1cedda32ae8c",
+    "fileName": "S1158.pdf",
+    "folderName": "November'26 Reports / S1158 Hitech City 2",
+    "processedAt": "2026-11-17T14:44:20.435Z",
+    "storeCode": "S1158",
+    "month": "Nov 2026"
+  },
+  "1LHJoQODDftFLLty26sFYckyuR8mfvNCf": {
+    "md5Checksum": "931034415d16b1bf42bfde86c1236000",
+    "fileName": "S1113 Gachibowli.pdf",
+    "folderName": "November'26 Reports / S1113 Gachibowli",
+    "processedAt": "2026-11-17T14:44:23.245Z",
+    "storeCode": "S1113",
+    "month": "Nov 2026"
   }
 }
