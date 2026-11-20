@@ -446,5 +446,29 @@
     "processedAt": "2026-11-17T14:44:23.245Z",
     "storeCode": "S1113",
     "month": "Nov 2026"
+  },
+  "1WKeQvT8G-cRPk0p1d0phYu2too2vkdH7": {
+    "md5Checksum": "aea8d731c05e1166a83b877a14450fca",
+    "fileName": "S1128 Vanasthalipuram.pdf",
+    "folderName": "November'26 Reports / S1128 Vanasthalipuram",
+    "processedAt": "2026-11-20T14:12:33.781Z",
+    "storeCode": "S1128",
+    "month": "Nov 2026"
+  },
+  "1dQVhZA53_9ZGSbWO3JIujuwwoEZ7ewxV": {
+    "md5Checksum": "271094cc361a1514f5a38329d5cb02f0",
+    "fileName": "S1156 Gudimalkapur.pdf",
+    "folderName": "November'26 Reports / S1156 Gudimalkapur",
+    "processedAt": "2026-11-20T14:12:38.380Z",
+    "storeCode": "S1156",
+    "month": "Nov 2026"
+  },
+  "1M0Ri8OZ_MJji3oVSFy36h8vH-zTu1B91": {
+    "md5Checksum": "610b33613f0bdc952c9cd29e6c40befb",
+    "fileName": "S1145 Padmarao Nagar.pdf",
+    "folderName": "November'26 Reports / S1145 Padmarao Nagar",
+    "processedAt": "2026-11-20T14:12:42.989Z",
+    "storeCode": "S1145",
+    "month": "Nov 2026"
   }
 }
