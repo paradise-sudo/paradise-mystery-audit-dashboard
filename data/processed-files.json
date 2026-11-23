@@ -478,5 +478,37 @@
     "processedAt": "2026-11-21T13:37:17.591Z",
     "storeCode": "S1157",
     "month": "Nov 2026"
+  },
+  "1q1NytAbizyIymtpJjgjATxV1BgET9jK4": {
+    "md5Checksum": "5f5a1788a3621252fd419db9084d2838",
+    "fileName": "S3105 NAD Jn.pdf",
+    "folderName": "November'26 Reports / S3105 NAD Jn",
+    "processedAt": "2026-11-23T16:16:19.250Z",
+    "storeCode": "S3105",
+    "month": "Nov 2026"
+  },
+  "1ZRfP5v1nopftsm1Wd2pNWComuCuxTAyl": {
+    "md5Checksum": "59670573b877474a4f96149bd839125a",
+    "fileName": "S1132 Nexus Mall.pdf",
+    "folderName": "November'26 Reports / S1132 Nexus Mall",
+    "processedAt": "2026-11-23T16:16:23.458Z",
+    "storeCode": "S1132",
+    "month": "Nov 2026"
+  },
+  "1C1iIlobES_EjIsAOMB5beNtAscKIkuFL": {
+    "md5Checksum": "d7a936b937832eb763d434d3d3d55e5e",
+    "fileName": "S1110 Kukatpally.pdf",
+    "folderName": "November'26 Reports / S1110 Kukatpally",
+    "processedAt": "2026-11-23T16:16:26.148Z",
+    "storeCode": "S1110",
+    "month": "Nov 2026"
+  },
+  "16rcKLsRsxIAALIBsx5WpQu8LjdFwZOVM": {
+    "md5Checksum": "7e63b8094eff76701e1a595db359f511",
+    "fileName": "S1101-05 Secunderabad.pdf",
+    "folderName": "November'26 Reports / S1101-05 Secunderabad",
+    "processedAt": "2026-11-23T16:16:29.328Z",
+    "storeCode": "S1101-05",
+    "month": "Nov 2026"
   }
 }
