@@ -518,5 +518,21 @@
     "processedAt": "2026-11-25T15:51:55.921Z",
     "storeCode": "S1159",
     "month": "Nov 2026"
+  },
+  "1aK257fRD_k9LAPWtrbIgvx5g9IJsHmie": {
+    "md5Checksum": "004a2363d6bc0c7bf0143777f09bef85",
+    "fileName": "S1148 Suncity.pdf",
+    "folderName": "November'26 Reports / S1148 Suncity",
+    "processedAt": "2026-11-27T15:24:34.564Z",
+    "storeCode": "S1148",
+    "month": "Nov 2026"
+  },
+  "1umwmxHZI593Rp393wrHNjwumU6HIjdwf": {
+    "md5Checksum": "64daaeb83e8018bdab33afb13941c2a4",
+    "fileName": "S6107 T Nagar.pdf",
+    "folderName": "November'26 Reports / S6107 T Nagar",
+    "processedAt": "2026-11-27T15:24:38.376Z",
+    "storeCode": "S6107",
+    "month": "Nov 2026"
   }
 }
